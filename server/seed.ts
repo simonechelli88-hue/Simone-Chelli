@@ -1,3 +1,4 @@
+import { pool } from "./db";
 import { db } from "./db";
 import { users, workPhases } from "@shared/schema";
 import { PREDEFINED_PHASES } from "../client/src/lib/workPhases";
@@ -25,10 +26,79 @@ const EMPLOYEES = [
   { fullName: 'ADMIN EUROELETTRICA', accessCode: 'admin', isAdmin: true },
 ];
 
+async function createTablesIfNotExist() {
+  console.log('🏗️  Creazione tabelle database...');
+  
+  // Create sessions table (required for Replit Auth)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      sid VARCHAR PRIMARY KEY,
+      sess JSONB NOT NULL,
+      expire TIMESTAMP NOT NULL
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON sessions (expire);
+  `);
+
+  // Create users table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      full_name VARCHAR NOT NULL,
+      access_code VARCHAR UNIQUE NOT NULL,
+      is_admin BOOLEAN DEFAULT false NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  // Create work_phases table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS work_phases (
+      id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+      code VARCHAR(50) UNIQUE NOT NULL,
+      description VARCHAR(500) NOT NULL,
+      category VARCHAR(100) NOT NULL,
+      hour_threshold INTEGER DEFAULT 100 NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  // Create timesheets table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS timesheets (
+      id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+      user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      date DATE NOT NULL,
+      type VARCHAR(20) NOT NULL,
+      work_phase_id INTEGER REFERENCES work_phases(id) ON DELETE SET NULL,
+      hours INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_timesheets_user_date ON timesheets (user_id, date);
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_timesheets_date ON timesheets (date);
+  `);
+
+  console.log('✅ Tabelle create con successo!');
+}
+
 export async function seedDatabaseIfEmpty() {
   try {
     console.log('🔍 Controllo database...');
 
+    // First, create tables if they don't exist
+    await createTablesIfNotExist();
+
+    // Check if database already has data
     const existingUsers = await db.select().from(users).limit(1);
     
     if (existingUsers.length > 0) {
@@ -65,5 +135,6 @@ export async function seedDatabaseIfEmpty() {
     console.log('\n🎉 Database inizializzato con successo!');
   } catch (error) {
     console.error('❌ Errore durante l\'inizializzazione:', error);
+    throw error;
   }
 }
