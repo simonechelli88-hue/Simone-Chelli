@@ -4,7 +4,7 @@ services:
     name: rapportini-euro-el
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build && npm run db:push -- --force
     startCommand: npm start
     envVars:
       - key: NODE_ENV
