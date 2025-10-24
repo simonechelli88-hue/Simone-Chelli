@@ -21,12 +21,14 @@ function Router() {
       ) : user?.isAdmin ? (
         <>
           <Route path="/" component={AdminDashboard} />
-          <Route path="/admin/employees" component={AdminEmployees} />
-          <Route path="/admin/phases" component={AdminPhases} />
+          <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/dipendenti" component={AdminEmployees} />
+          <Route path="/admin/fasi" component={AdminPhases} />
         </>
       ) : (
         <>
           <Route path="/" component={EmployeeDashboard} />
+          <Route path="/dashboard" component={EmployeeDashboard} />
         </>
       )}
       <Route component={NotFound} />

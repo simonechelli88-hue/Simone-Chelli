@@ -51,8 +51,8 @@ export default function EmployeeDashboard() {
       <EmployeeNav user={user} />
       <main className="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
         <div className="mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
-            Benvenuto, {user.firstName || "Dipendente"}!
+          <h2 className="text-2xl md:text-3xl font-bold mb-2" data-testid="text-username">
+            Benvenuto, {user.fullName.split(" ")[0]}!
           </h2>
           <p className="text-muted-foreground">
             Registra i tuoi rapportini giornalieri selezionando la data dal calendario.

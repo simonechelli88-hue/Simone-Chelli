@@ -3,7 +3,7 @@ import {
   workPhases,
   timesheets,
   type User,
-  type UpsertUser,
+  type InsertUser,
   type WorkPhase,
   type InsertWorkPhase,
   type Timesheet,
@@ -14,9 +14,10 @@ import { eq, and, sql, desc } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (MANDATORY for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUserByAccessCode(accessCode: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
 
   // Work Phase operations
@@ -51,18 +52,13 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+  async getUserByAccessCode(accessCode: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.accessCode, accessCode.toLowerCase()));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
     return user;
   }
 

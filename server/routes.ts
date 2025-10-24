@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./simpleAuth";
 import { insertTimesheetSchema, updateTimesheetSchema, insertWorkPhaseSchema } from "@shared/schema";
 import { fromError } from "zod-validation-error";
 
@@ -9,23 +9,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // ========================================
-  // AUTH ROUTES
-  // ========================================
-  
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Auth routes are handled in simpleAuth.ts
 
   // ========================================
   // TIMESHEET ROUTES
@@ -35,11 +19,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/timesheets/:userId/:yearMonth", isAuthenticated, async (req: any, res) => {
     try {
       const { userId, yearMonth } = req.params;
-      const currentUserId = req.user.claims.sub;
+      const currentUser = (req as any).currentUser;
       
       // Users can only access their own timesheets unless they're admin
-      const currentUser = await storage.getUser(currentUserId);
-      if (userId !== currentUserId && !currentUser?.isAdmin) {
+      if (userId !== currentUser.id && !currentUser.isAdmin) {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -55,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create timesheet
   app.post("/api/timesheets", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUser = (req as any).currentUser;
       
       // Validate request body
       const validation = insertTimesheetSchema.safeParse(req.body);
@@ -67,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = validation.data;
       
       // Users can only create timesheets for themselves
-      if (data.userId !== currentUserId) {
+      if (data.userId !== currentUser.id) {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -89,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/timesheets/:id", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const currentUserId = req.user.claims.sub;
+      const currentUser = (req as any).currentUser;
       
       // Validate request body
       const validation = updateTimesheetSchema.partial().safeParse(req.body);
@@ -100,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get existing timesheet to verify ownership
       const timesheets = await storage.getTimesheetsByUserAndMonth(
-        currentUserId,
+        currentUser.id,
         new Date().getFullYear(),
         new Date().getMonth() + 1
       );
@@ -110,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Timesheet not found" });
       }
       
-      if (existing.userId !== currentUserId) {
+      if (existing.userId !== currentUser.id) {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -130,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get existing timesheet to verify ownership
       const timesheets = await storage.getTimesheetsByUserAndMonth(
-        currentUserId,
+        currentUser.id,
         new Date().getFullYear(),
         new Date().getMonth() + 1
       );
@@ -140,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Timesheet not found" });
       }
       
-      if (existing.userId !== currentUserId) {
+      if (existing.userId !== currentUser.id) {
         return res.status(403).json({ message: "Forbidden" });
       }
       

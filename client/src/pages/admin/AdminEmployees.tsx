@@ -116,12 +116,9 @@ export default function AdminEmployees() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold truncate">
-                            {emp.firstName && emp.lastName 
-                              ? `${emp.firstName} ${emp.lastName}` 
-                              : emp.email
-                            }
+                            {emp.fullName}
                           </div>
-                          <div className="text-sm text-muted-foreground truncate">{emp.email}</div>
+                          <div className="text-sm text-muted-foreground truncate">Dipendente</div>
                         </div>
                         <div className="ml-2 flex flex-col items-end gap-1">
                           <Badge variant="secondary" className="text-xs">
@@ -147,7 +144,7 @@ export default function AdminEmployees() {
               <CardTitle>Dettaglio Ore per Fase</CardTitle>
               <CardDescription>
                 {selectedEmployee 
-                  ? `Ore registrate da ${selectedEmployee.user.firstName && selectedEmployee.user.lastName ? `${selectedEmployee.user.firstName} ${selectedEmployee.user.lastName}` : selectedEmployee.user.email}`
+                  ? `Ore registrate da ${selectedEmployee.user.fullName}`
                   : "Seleziona un dipendente per visualizzare i dettagli"
                 }
               </CardDescription>
