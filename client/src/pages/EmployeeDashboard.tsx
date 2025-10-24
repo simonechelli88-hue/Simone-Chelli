@@ -4,6 +4,7 @@ import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeNav } from "@/components/EmployeeNav";
 import { TimesheetCalendar } from "@/components/TimesheetCalendar";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default function EmployeeDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -60,6 +61,7 @@ export default function EmployeeDashboard() {
         </div>
         <TimesheetCalendar userId={user.id} />
       </main>
+      <InstallPrompt />
     </div>
   );
 }

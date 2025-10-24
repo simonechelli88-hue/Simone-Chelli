@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminNav } from "@/components/AdminNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Timesheet } from "@shared/schema";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 interface StatsData {
   totalEmployees: number;
@@ -235,6 +236,7 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </main>
+      <InstallPrompt />
     </div>
   );
 }
