@@ -6,7 +6,6 @@ services:
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
-    preDeployCommand: npm run db:push -- --force && node server/seedData.js
     envVars:
       - key: NODE_ENV
         value: production
