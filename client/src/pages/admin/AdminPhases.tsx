@@ -213,13 +213,8 @@ export default function AdminPhases() {
     );
   }
 
-  const groupedPhases = phases?.reduce((acc, phase) => {
-    if (!acc[phase.category]) {
-      acc[phase.category] = [];
-    }
-    acc[phase.category].push(phase);
-    return acc;
-  }, {} as Record<string, WorkPhase[]>) || {};
+  // Sort phases by code
+  const sortedPhases = phases ? [...phases].sort((a, b) => a.code.localeCompare(b.code)) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,7 +312,7 @@ export default function AdminPhases() {
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-            ) : Object.keys(groupedPhases).length === 0 ? (
+            ) : sortedPhases.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <svg className="w-16 h-16 text-muted-foreground/50 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -328,129 +323,121 @@ export default function AdminPhases() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {Object.entries(groupedPhases).map(([category, categoryPhases]) => (
-                  <div key={category}>
-                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                      <Badge variant="outline">{category}</Badge>
-                      <span className="text-sm text-muted-foreground font-normal">
-                        ({categoryPhases.length} {categoryPhases.length === 1 ? "fase" : "fasi"})
-                      </span>
-                    </h3>
-                    <div className="border rounded-lg overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-muted/50">
-                            <tr>
-                              <th className="text-left p-4 font-semibold text-sm">Codice</th>
-                              <th className="text-left p-4 font-semibold text-sm">Descrizione</th>
-                              <th className="text-right p-4 font-semibold text-sm">Soglia Ore</th>
-                              <th className="text-right p-4 font-semibold text-sm">Azioni</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y">
-                            {categoryPhases.map((phase) => (
-                              <tr key={phase.id} className="hover:bg-muted/20" data-testid={`phase-${phase.id}`}>
-                                <td className="p-4 font-medium">{phase.code}</td>
-                                <td className="p-4 text-sm">{phase.description}</td>
-                                <td className="p-4 text-right">
-                                  <Badge variant="secondary">{phase.hourThreshold}h</Badge>
-                                </td>
-                                <td className="p-4">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleEdit(phase)}
-                                          data-testid={`button-edit-${phase.id}`}
-                                        >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                          </svg>
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-lg">
-                                        <DialogHeader>
-                                          <DialogTitle>Modifica Fase</DialogTitle>
-                                          <DialogDescription>
-                                            Modifica i dettagli della fase di lavoro
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <form onSubmit={handleSubmit}>
-                                          <div className="space-y-4 py-4">
-                                            <div className="space-y-2">
-                                              <Label htmlFor="edit-code">Codice Fase *</Label>
-                                              <Input
-                                                id="edit-code"
-                                                value={formData.code}
-                                                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                              />
-                                            </div>
-                                            <div className="space-y-2">
-                                              <Label htmlFor="edit-description">Descrizione *</Label>
-                                              <Input
-                                                id="edit-description"
-                                                value={formData.description}
-                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                              />
-                                            </div>
-                                            <div className="space-y-2">
-                                              <Label htmlFor="edit-category">Categoria *</Label>
-                                              <Input
-                                                id="edit-category"
-                                                value={formData.category}
-                                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                              />
-                                            </div>
-                                            <div className="space-y-2">
-                                              <Label htmlFor="edit-threshold">Soglia Ore</Label>
-                                              <Input
-                                                id="edit-threshold"
-                                                type="number"
-                                                min="1"
-                                                value={formData.hourThreshold}
-                                                onChange={(e) => setFormData({ ...formData, hourThreshold: parseInt(e.target.value) || 100 })}
-                                              />
-                                            </div>
-                                          </div>
-                                          <DialogFooter>
-                                            <Button type="button" variant="outline" onClick={() => setEditingPhase(null)}>
-                                              Annulla
-                                            </Button>
-                                            <Button type="submit" disabled={updateMutation.isPending}>
-                                              {updateMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
-                                            </Button>
-                                          </DialogFooter>
-                                        </form>
-                                      </DialogContent>
-                                    </Dialog>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (confirm(`Sei sicuro di voler eliminare la fase ${phase.code}?`)) {
-                                          deleteMutation.mutate(phase.id);
-                                        }
-                                      }}
-                                      disabled={deleteMutation.isPending}
-                                      data-testid={`button-delete-${phase.id}`}
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-sm">Codice</th>
+                        <th className="text-left p-4 font-semibold text-sm">Descrizione</th>
+                        <th className="text-left p-4 font-semibold text-sm">Categoria</th>
+                        <th className="text-right p-4 font-semibold text-sm">Soglia Ore</th>
+                        <th className="text-right p-4 font-semibold text-sm">Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {sortedPhases.map((phase) => (
+                        <tr key={phase.id} className="hover:bg-muted/20" data-testid={`phase-${phase.id}`}>
+                          <td className="p-4 font-medium">{phase.code}</td>
+                          <td className="p-4 text-sm">{phase.description}</td>
+                          <td className="p-4">
+                            <Badge variant="outline">{phase.category}</Badge>
+                          </td>
+                          <td className="p-4 text-right">
+                            <Badge variant="secondary">{phase.hourThreshold}h</Badge>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEdit(phase)}
+                                    data-testid={`button-edit-${phase.id}`}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-lg">
+                                  <DialogHeader>
+                                    <DialogTitle>Modifica Fase</DialogTitle>
+                                    <DialogDescription>
+                                      Modifica i dettagli della fase di lavoro
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <form onSubmit={handleSubmit}>
+                                    <div className="space-y-4 py-4">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="edit-code">Codice Fase *</Label>
+                                        <Input
+                                          id="edit-code"
+                                          value={formData.code}
+                                          onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="edit-description">Descrizione *</Label>
+                                        <Input
+                                          id="edit-description"
+                                          value={formData.description}
+                                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="edit-category">Categoria *</Label>
+                                        <Input
+                                          id="edit-category"
+                                          value={formData.category}
+                                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="edit-threshold">Soglia Ore</Label>
+                                        <Input
+                                          id="edit-threshold"
+                                          type="number"
+                                          min="1"
+                                          value={formData.hourThreshold}
+                                          onChange={(e) => setFormData({ ...formData, hourThreshold: parseInt(e.target.value) || 100 })}
+                                        />
+                                      </div>
+                                    </div>
+                                    <DialogFooter>
+                                      <Button type="button" variant="outline" onClick={() => setEditingPhase(null)}>
+                                        Annulla
+                                      </Button>
+                                      <Button type="submit" disabled={updateMutation.isPending}>
+                                        {updateMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+                                      </Button>
+                                    </DialogFooter>
+                                  </form>
+                                </DialogContent>
+                              </Dialog>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm(`Sei sicuro di voler eliminare la fase ${phase.code}?`)) {
+                                    deleteMutation.mutate(phase.id);
+                                  }
+                                }}
+                                disabled={deleteMutation.isPending}
+                                data-testid={`button-delete-${phase.id}`}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </CardContent>
