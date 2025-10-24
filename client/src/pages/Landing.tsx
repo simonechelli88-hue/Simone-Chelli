@@ -84,9 +84,6 @@ export default function Landing() {
                 data-testid="input-access-code"
                 autoComplete="off"
               />
-              <p className="text-xs text-muted-foreground">
-                Esempio: SIMONE CHELLI (maiuscole o minuscole)
-              </p>
             </div>
 
             <Button 
